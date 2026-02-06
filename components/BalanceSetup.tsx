@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { BalanceState } from '../types';
 
 interface BalanceSetupProps {
-  onSave: (capital: number) => void;
+  onSave: (capital: number, balances: Omit<BalanceState, 'capital'>) => void;
 }
 
 const BalanceSetup: React.FC<BalanceSetupProps> = ({ onSave }) => {
@@ -35,6 +35,13 @@ const BalanceSetup: React.FC<BalanceSetupProps> = ({ onSave }) => {
   };
 
   const handleExportAndSave = () => {
+    // Validation: Check if Balanced Total (Capital) is 0.00
+    // Using a small epsilon for float comparison safety, though simple 0 check works for direct inputs
+    if (Math.abs(calculatedCapital) < 0.01 && totalAssets === 0 && totalLiabilities === 0) {
+      alert("Please enter initial balance values before saving.");
+      return;
+    }
+
     const setupData = {
       ...balances,
       capital: calculatedCapital,
@@ -53,8 +60,8 @@ const BalanceSetup: React.FC<BalanceSetupProps> = ({ onSave }) => {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
-    // Proceed with the app state update
-    onSave(calculatedCapital);
+    // Proceed with the app state update, passing individual balances
+    onSave(calculatedCapital, balances);
   };
 
   return (

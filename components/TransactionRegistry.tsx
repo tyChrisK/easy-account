@@ -13,6 +13,11 @@ interface AccountData {
   credits: AccountInfo[];
 }
 
+interface TransactionRegistryProps {
+  entries: LedgerEntry[];
+  onUpdateEntries: (entries: LedgerEntry[]) => void;
+}
+
 const CAT_STORAGE_KEY = 'easy_account_categories_v4';
 const ACC_STORAGE_KEY = 'easy_account_custom_accounts_v4';
 
@@ -54,7 +59,7 @@ const BrandIcon: React.FC<{ brand: CardBrand; className?: string }> = ({ brand, 
   }
 };
 
-const TransactionRegistry: React.FC = () => {
+const TransactionRegistry: React.FC<TransactionRegistryProps> = ({ entries, onUpdateEntries }) => {
   const today = new Date().toISOString().split('T')[0];
   const typeRef = useRef<HTMLSelectElement>(null);
   
@@ -72,8 +77,6 @@ const TransactionRegistry: React.FC = () => {
     return saved ? JSON.parse(saved) : DEFAULT_ACCOUNTS;
   });
 
-  const [entries, setEntries] = useState<LedgerEntry[]>([]);
-  
   const [formData, setFormData] = useState({
     type: '', 
     subTypeIndex: 0,
@@ -113,7 +116,7 @@ const TransactionRegistry: React.FC = () => {
 
   const l1Options = useMemo(() => Object.keys(categories), [categories]);
   const l2Options = useMemo(() => (formData.l1 ? Object.keys(categories[formData.l1] || {}) : []), [formData.l1, categories]);
-  const l3Options = useMemo(() => (formData.l1 && formData.l2 ? (categories[formData.l1][formData.l2] || []) : []), [formData.l1, formData.l2, categories]);
+  const l3Options = useMemo(() => (formData.l1 && categories[formData.l1] && formData.l2 ? (categories[formData.l1][formData.l2] || []) : []), [formData.l1, formData.l2, categories]);
 
   const handleL1Change = (val: string) => setFormData(prev => ({ ...prev, l1: val }));
   const handleL2Change = (val: string) => setFormData(prev => ({ ...prev, l2: val }));
@@ -134,7 +137,9 @@ const TransactionRegistry: React.FC = () => {
   };
 
   const processAddAccount = () => {
-    const raw = newNameInput.trim();
+    // Sanitize input to remove hyphens/spaces before processing
+    const raw = newNameInput.replace(/[^0-9]/g, '');
+    
     if (raw.length < 4) return;
     const last4 = raw.slice(-4);
     const brand = detectBrand(raw);
@@ -201,13 +206,13 @@ const TransactionRegistry: React.FC = () => {
       out: formData.out ? parseFloat(formData.out) : null,
       remarks: formData.remarks
     };
-    setEntries([newEntry, ...entries]);
+    onUpdateEntries([newEntry, ...entries]);
     setFormData(prev => ({ ...prev, details: '', in: '', out: '', remarks: '' }));
     typeRef.current?.focus();
   };
 
   const deleteEntry = (id: string) => {
-    setEntries(prev => prev.filter(e => e.id !== id));
+    onUpdateEntries(entries.filter(e => e.id !== id));
   };
 
   const currentSubType = formData.type === 'Bank +' ? accounts.banks[formData.subTypeIndex] : formData.type === 'Credit +' ? accounts.credits[formData.subTypeIndex] : null;
@@ -231,7 +236,15 @@ const TransactionRegistry: React.FC = () => {
                   className="w-full bg-slate-50 border-border-light rounded-lg h-12 px-4 text-sm font-bold tracking-widest mb-8 focus:ring-primary focus:border-primary"
                   placeholder="ACCOUNT OR CARD NUMBER"
                   value={newNameInput}
-                  onChange={(e) => setNewNameInput(e.target.value)}
+                  onChange={(e) => {
+                    let val = e.target.value;
+                    // Add formatting logic for Credit inputs
+                    if (modalContext?.type === 'Credit') {
+                       const numeric = val.replace(/\D/g, '');
+                       val = numeric.replace(/(.{4})(?=.)/g, '$1-');
+                    }
+                    setNewNameInput(val);
+                  }}
                   onKeyDown={(e) => e.key === 'Enter' && processAddAccount()}
                 />
                 <div className="flex justify-end gap-3">
@@ -310,7 +323,7 @@ const TransactionRegistry: React.FC = () => {
                     <select 
                       value={formData.subTypeIndex}
                       onChange={(e) => setFormData({...formData, subTypeIndex: parseInt(e.target.value)})}
-                      className="w-full h-full bg-white border border-border-light text-primary rounded-md focus:ring-primary pl-9 pr-8 text-base font-bold font-mono tracking-widest appearance-none outline-none"
+                      className="w-full h-full bg-white border border-border-light text-primary rounded-md focus:ring-primary pl-9 pr-8 text-sm font-bold font-mono tracking-widest appearance-none outline-none py-0 leading-tight"
                       style={{ backgroundImage: 'none' }} // Ensure tailwind forms plugin arrow is gone
                     >
                       {(formData.type === 'Bank +' ? accounts.banks : accounts.credits).map((acc, idx) => (
