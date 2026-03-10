@@ -1,40 +1,20 @@
+<div align="center">
+<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+</div>
 
-export enum AppView {
-  TERMINAL = 'TERMINAL',
-  SETUP = 'SETUP',
-  EQUITY_REPORT = 'EQUITY_REPORT',
-  EARNING_REPORT = 'EARNING_REPORT'
-}
+# Run and deploy your AI Studio app
 
-export type CardBrand = 'visa' | 'master' | 'jcb' | 'diners' | 'amex' | 'generic';
+This contains everything you need to run your app locally.
 
-export interface AccountInfo {
-  masked: string;
-  brand: CardBrand;
-}
+View your app in AI Studio: https://ai.studio/apps/2ff662f1-12d3-4cbe-a057-9068a6cc4990
 
-export interface LedgerEntry {
-  id: string;
-  type: string;
-  subType?: string; // Masked account (e.g., ***1234)
-  subTypeBrand?: CardBrand;
-  date: string;
-  category: {
-    l1: string;
-    l2: string;
-    l3: string;
-  };
-  details: string;
-  in: number | null;
-  out: number | null;
-  remarks: string;
-}
+## Run Locally
 
-export interface BalanceState {
-  cash: number;
-  bank: number;
-  stock: number;
-  loan: number;
-  card: number;
-  capital: number;
-}
+**Prerequisites:**  Node.js
+
+
+1. Install dependencies:
+   `npm install`
+2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+3. Run the app:
+   `npm run dev`
